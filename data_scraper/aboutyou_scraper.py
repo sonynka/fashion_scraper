@@ -50,7 +50,6 @@ class Scraper():
                                                      'color', 'product_name', 'attributes'])
         self.image_format = img_format
 
-
     def download_data(self):
 
         for category in self.categories:
@@ -58,6 +57,10 @@ class Scraper():
                 self.download_category(category)
             except Exception as e:
                 print('Problem with download of category: {}'.format(category), e)
+
+        # save all data csv
+        csv_file = self.data_path + 'data.csv'
+        self.append_csv_file(csv_file, self.df_product_info)
 
     def download_category(self, category):
 
@@ -68,13 +71,18 @@ class Scraper():
 
         for subcategory, subcategory_link in subcategories.items():
 
-            print('Downloading sub-category: {}'.format(subcategory))
             print(50 * '-')
+            print('Downloading sub-category: {}'.format(subcategory))
 
             try:
                 self.download_subcategory(category, subcategory, subcategory_link)
             except Exception as e:
                 print('Problem with download of subcategory: {}'.format(subcategory), e)
+
+        # save csv to category file (only select rows with category, since df is accumulating all data)
+        csv_file = os.path.join(self.data_path, category + '.csv')
+        df_category = self.df_product_info[self.df_product_info.category == category]
+        self.append_csv_file(csv_file, df_category)
 
     def download_subcategory(self, category, subcategory, subcategory_link):
 
@@ -90,27 +98,25 @@ class Scraper():
             print('Color {}: {} products'.format(color_name, len(products)))
 
             for product in products:
-                name, img_id, img_link, details = self.get_product_info(product)
+                try:
+                    name, img_id, img_link, details = self.get_product_info(product)
 
-                # save product image
-                img_filepath = os.path.join(subcategory_data_path, img_id + self.image_format)
-                self.save_product_image(img_link, img_filepath, width=400)
+                    # save product image
+                    img_filepath = os.path.join(subcategory_data_path, img_id + self.image_format)
+                    self.save_product_image(img_link, img_filepath, width=400)
 
-                # save product to dataframe
-                product_dict = {'img_path': img_filepath,
-                                'img_url': img_link,
-                                'category': category,
-                                'subcategory': subcategory,
-                                'color': color_name,
-                                'product_name': name,
-                                'attributes': ','.join(details)}
+                    # save product to dataframe
+                    product_dict = {'img_path': img_filepath,
+                                    'img_url': img_link,
+                                    'category': category,
+                                    'subcategory': subcategory,
+                                    'color': color_name,
+                                    'product_name': name,
+                                    'attributes': ','.join(details)}
 
-                self.df_product_info = self.df_product_info.append(product_dict, ignore_index=True)
-
-        # save csv
-        csv_file = os.path.join(self.data_path, category + '.csv')
-        self.df_product_info.to_csv(csv_file, index=False, encoding='latin1', sep=';')
-        print('Writing sub-category data to: {}'.format(csv_file))
+                    self.df_product_info = self.df_product_info.append(product_dict, ignore_index=True)
+                except Exception as e:
+                    print('Problem with downloading product: ', e)
 
     def get_product_info(self, product):
 
@@ -200,6 +206,18 @@ class Scraper():
         print('Found {} subcategories for {}'.format(len(sub_categories), category))
         return sub_categories
 
+    def append_csv_file(self, csv_file, df):
+        try:
+            df_to_save = pd.DataFrame()
+
+            if os.path.exists(csv_file):
+                df_to_save = pd.read_csv(csv_file, encoding='latin1', sep=';')
+
+            df_to_save = df_to_save.append(df)
+            df_to_save = df_to_save.drop_duplicates()
+            df_to_save.to_csv(csv_file, index=False, encoding='latin1', sep=';')
+        except Exception as e:
+            print('Problem with writing category dataframe to csv: {}'.format(csv_file), e)
 
     @staticmethod
     def get_response(url):
@@ -213,7 +231,7 @@ class Scraper():
 
 
 def main():
-    scraper = Scraper(color_names=['yellow'])
+    scraper = Scraper(color_names=['beige'], categories=['jumpsuits & overalls'])
     scraper.download_data()
 
 
