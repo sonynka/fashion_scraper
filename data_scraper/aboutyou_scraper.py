@@ -16,7 +16,7 @@ class Scraper():
     DATA_PATH = '/Users/sonynka/HTW/IC/data/aboutyou/'
     CHROMEDRIVER_PATH = '../chromedriver/chromedriver'
 
-    URL = 'https://aboutyou.de'
+    URL = 'https://www.aboutyou.de'
     URL_CLOTHES = URL + '/frauen/bekleidung'
 
     COLORS = {'black': 38932,
@@ -30,7 +30,7 @@ class Scraper():
               'beige': 38919
               }
 
-    CATEGORIES = ['kleider', 'pullover']
+    CATEGORIES = ['ponchos & kimonos','kleider', 'pullover']
     IMAGE_FORMAT = '.jpg'
 
     def __init__(self,
@@ -46,63 +46,71 @@ class Scraper():
         self.colors = {color_name: self.COLORS[color_name] for color_name in color_names}
         self.categories = categories
 
-        self.df_product_info = pd.DataFrame()
+        self.df_product_info = pd.DataFrame(columns=['img_path', 'img_url', 'category', 'subcategory',
+                                                     'color', 'product_name', 'attributes'])
         self.image_format = img_format
 
 
     def download_data(self):
 
         for category in self.categories:
-            self.download_category(category)
+            try:
+                self.download_category(category)
+            except Exception as e:
+                print('Problem with download of category: {}'.format(category), e)
 
     def download_category(self, category):
 
-        category_data_path = os.path.join(self.data_path, category)
-
         print('\nDownloading category: {}'.format(category))
-        print(50 * '-')
+        print(50 * '#')
 
         subcategories = self.get_subcategories(category)
 
         for subcategory, subcategory_link in subcategories.items():
 
             print('Downloading sub-category: {}'.format(subcategory))
+            print(50 * '-')
 
-            subcategory_data_path = os.path.join(category_data_path, subcategory)
-            if not os.path.exists(subcategory_data_path):
-                os.makedirs(subcategory_data_path)
+            try:
+                self.download_subcategory(category, subcategory, subcategory_link)
+            except Exception as e:
+                print('Problem with download of subcategory: {}'.format(subcategory), e)
 
-            for color_name, color_code in self.colors.items():
+    def download_subcategory(self, category, subcategory, subcategory_link):
 
-                subcategory_color_link = subcategory_link + '?bi_color={}'.format(color_code)
+        subcategory_data_path = os.path.join(os.path.join(self.data_path, category), subcategory)
+        if not os.path.exists(subcategory_data_path):
+            os.makedirs(subcategory_data_path)
 
-                products = self.download_subcategory_products(subcategory_color_link)
-                print('Color {}: {} products'.format(color_name, len(products)))
+        for color_name, color_code in self.colors.items():
 
-                for product in products:
-                    name, img_id, img_link, details = self.get_product_info(product)
+            subcategory_color_link = subcategory_link + '?bi_color={}'.format(color_code)
 
-                    # save product image
-                    img_filepath = os.path.join(subcategory_data_path, img_id + self.image_format)
-                    self.save_product_image(img_link, img_filepath, width=400)
+            products = self.download_subcategory_products(subcategory_color_link)
+            print('Color {}: {} products'.format(color_name, len(products)))
 
-                    # save product to dataframe
-                    product_dict = {'img_path': img_filepath,
-                                    'img_url': img_link,
-                                    'category': category,
-                                    'subcategory': subcategory,
-                                    'color': color_name,
-                                    'product_name': name,
-                                    'attributes': ','.join(details)}
+            for product in products:
+                name, img_id, img_link, details = self.get_product_info(product)
 
-                    self.df_product_info = self.df_product_info.append(product_dict, ignore_index=True)
+                # save product image
+                img_filepath = os.path.join(subcategory_data_path, img_id + self.image_format)
+                self.save_product_image(img_link, img_filepath, width=400)
 
-            # save csv after each subcategory
-            self.df_product_info = self.df_product_info[['img_path', 'img_url', 'category', 'subcategory', 'color', 'product_name', 'attributes']]
-            csv_file = os.path.join(self.data_path, category + '.csv')
-            self.df_product_info.to_csv(csv_file, index=False, encoding='latin1', sep=';')
-            print('Writing sub-category data to: {}'.format(csv_file))
+                # save product to dataframe
+                product_dict = {'img_path': img_filepath,
+                                'img_url': img_link,
+                                'category': category,
+                                'subcategory': subcategory,
+                                'color': color_name,
+                                'product_name': name,
+                                'attributes': ','.join(details)}
 
+                self.df_product_info = self.df_product_info.append(product_dict, ignore_index=True)
+
+        # save csv
+        csv_file = os.path.join(self.data_path, category + '.csv')
+        self.df_product_info.to_csv(csv_file, index=False, encoding='latin1', sep=';')
+        print('Writing sub-category data to: {}'.format(csv_file))
 
     def get_product_info(self, product):
 
@@ -141,21 +149,38 @@ class Scraper():
         # start driver to click on Produktansicht button
         driver = webdriver.Chrome(self.chromedriver_path)
         driver.get(subcategory_link)
-        driver.find_element_by_class_name('button_6u2hqh').click()
 
-        # download Produktansicht page and close driver
-        subcat_soup = BeautifulSoup(driver.page_source, 'html.parser')
-        driver.close()
+        products = []
 
-        # avoid taking 'Weitere Produkte' section, which are products that don't match the filter
-        color_products = subcat_soup.find('div', class_='wrapper_8yay2a')
-        products = color_products.find_all('div', class_='categoryTileWrapper_e296pg')
+        # for categories that don't have any products for the given filter, chrome opens a shortened url without
+        # the filter
+        if driver.current_url == subcategory_link:
+            driver.find_element_by_class_name('button_6u2hqh').click()
+
+            # download Produktansicht page and close driver
+            subcat_soup = BeautifulSoup(driver.page_source, 'html.parser')
+            driver.close()
+
+            # avoid taking 'Weitere Produkte' section, which are products that don't match the filter
+            color_products = subcat_soup.find('div', class_='wrapper_8yay2a')
+            products = color_products.find_all('div', class_='categoryTileWrapper_e296pg')
+        else:
+            driver.close()
+            print('No products found')
 
         return products
 
 
+
     def get_subcategories(self, category):
-        url_category = self.URL_CLOTHES + '/' + category
+
+        category_url_name = category
+        if ' ' in category_url_name:
+            category_url_name = category_url_name.replace(' ', '')
+        if '&' in category_url_name:
+            category_url_name = category_url_name.replace('&','-und-')
+
+        url_category = self.URL_CLOTHES + '/' + category_url_name
         response = requests.get(url_category)
 
         category_soup = BeautifulSoup(response.content, 'html.parser')
@@ -167,6 +192,10 @@ class Scraper():
             name = sub_category.text.lower()
             link = self.URL + sub_category['href']
             sub_categories[name] = link
+
+        # if no subcategories exists, take the category as subcategory
+        if len(sub_categories) == 0:
+            sub_categories[category] = url_category
 
         print('Found {} subcategories for {}'.format(len(sub_categories), category))
         return sub_categories
