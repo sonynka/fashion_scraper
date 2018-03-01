@@ -285,13 +285,13 @@ class AboutYouScraper():
             df_to_save = pd.DataFrame()
 
             if os.path.exists(csv_file):
-                df_to_save = pd.read_csv(csv_file, sep=';')
+                df_to_save = pd.read_csv(csv_file, sep=';', encoding='utf-8')
 
             df_to_save = df_to_save.append(df)
             df_to_save = df_to_save.drop_duplicates()
-            df_to_save.to_csv(csv_file, index=False, sep=';')
+            df_to_save.to_csv(csv_file, index=False, sep=';', encoding='utf-8')
         except Exception as e:
-            print('Problem with writing category dataframe to csv: {}'.format(csv_file), e)
+            print('Problem with writing dataframe to csv: {}'.format(csv_file), e)
 
     @staticmethod
     def print_progress_bar(iteration, total, prefix='', suffix='', length=100, fill='█'):
@@ -319,7 +319,7 @@ class AboutYouScraper():
 
 
 def main():
-    scraper = AboutYouScraper(categories=['strick', 'jeans'], data_path='/Users/sonynka/HTW/IC/data/aboutyou/')
+    scraper = AboutYouScraper(categories=['strick', 'jeans'], data_path='/Users/sonynka/HTW/IC/data/aboutyou')
     scraper.download_data()
 
 
