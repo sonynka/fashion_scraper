@@ -121,7 +121,10 @@ class AboutYouScraper():
 
         # where to save the subcategory images
         subcategory_data_path = os.path.join(os.path.join(self.data_path, category), subcategory)
-        if not os.path.exists(subcategory_data_path):
+        if os.path.exists(subcategory_data_path):
+            print('Subcategory already downloaded')
+            return
+        else:
             os.makedirs(subcategory_data_path)
 
         # download all colors
@@ -155,6 +158,8 @@ class AboutYouScraper():
                 except Exception as e:
                     print('Problem with downloading product: ', e)
 
+                # sleeep 2 seconds after each product
+                time.sleep(2)
                 self.print_progress_bar(prod_idx + 1, len(products), length=50)
 
             # save csv to category file (only select rows with category, since df is accumulating all data)
@@ -280,11 +285,11 @@ class AboutYouScraper():
             df_to_save = pd.DataFrame()
 
             if os.path.exists(csv_file):
-                df_to_save = pd.read_csv(csv_file, encoding='latin1', sep=';')
+                df_to_save = pd.read_csv(csv_file, sep=';')
 
             df_to_save = df_to_save.append(df)
             df_to_save = df_to_save.drop_duplicates()
-            df_to_save.to_csv(csv_file, index=False, encoding='latin1', sep=';')
+            df_to_save.to_csv(csv_file, index=False, sep=';')
         except Exception as e:
             print('Problem with writing category dataframe to csv: {}'.format(csv_file), e)
 
@@ -306,7 +311,7 @@ class AboutYouScraper():
         """
         Get response for an URL and evaluate the status code.
         """
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         try:
             return response
         except ValueError:
@@ -314,7 +319,7 @@ class AboutYouScraper():
 
 
 def main():
-    scraper = AboutYouScraper(categories=['kleider'], data_path='/Users/sonynka/HTW/IC/data/aboutyou/')
+    scraper = AboutYouScraper(categories=['strick', 'jeans'], data_path='/Users/sonynka/HTW/IC/data/aboutyou/')
     scraper.download_data()
 
 
