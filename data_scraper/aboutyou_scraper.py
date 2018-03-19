@@ -253,6 +253,8 @@ class AboutYouScraper():
             category_url_name = category_url_name.replace(' ', '')
         if '&' in category_url_name:
             category_url_name = category_url_name.replace('&','-und-')
+        if 'ö' in category_url_name:
+            category_url_name = category_url_name.replace('ö', 'oe')
 
         url_category = self.URL_CLOTHES + '/' + category_url_name
         response = self.get_response(url_category)
@@ -319,7 +321,7 @@ class AboutYouScraper():
 
 
 def main():
-    scraper = AboutYouScraper(categories=['strick', 'jeans'], data_path='/Users/sonynka/HTW/IC/data/aboutyou')
+    scraper = AboutYouScraper(categories=['jumpsuits & overalls'], data_path='/Users/sonynka/HTW/IC/data/aboutyou')
     scraper.download_data()
 
 
