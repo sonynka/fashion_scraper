@@ -3,12 +3,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import os
-import sys
-import cssutils
 from selenium import webdriver
-
-import logging
-cssutils.log.setLevel(logging.CRITICAL)
 
 
 class AboutYouScraper():
@@ -36,6 +31,7 @@ class AboutYouScraper():
               }
 
     # list of clothes categories on the aboutyou website
+    # special characters need to be replaced according to the url
     CATEGORIES = ['kleider', 'strick', 'jeans', 'jacken', 'blusen-und-tuniken',
                   'roecke', 'shirts', 'hosen', 'jumpsuits-und-overalls', 'tops']
 
@@ -85,6 +81,10 @@ class AboutYouScraper():
 
 
     def download_category(self, category):
+        """
+        Download all products from all colors for the given category
+        :param category: category to download
+        """
 
         print('\nDownloading category: {}'.format(category))
         print(50 * '#')
@@ -99,6 +99,7 @@ class AboutYouScraper():
 
             max_page = self.get_number_of_pages(category, self.colors[color])
             print('Color {}: {} pages'.format(color, max_page))
+            print('-' * 50)
 
             for page in range(1, max_page+1):
                 print('Downloading page: ', page)
@@ -107,10 +108,16 @@ class AboutYouScraper():
                     page_df = self.download_page(category, color, page)
                     color_df.append(page_df)
                 except Exception as e:
-                    print('Download of page #{} failed'.format(page))
+                    print('Download of page #{} failed'.format(page), e)
 
 
     def get_number_of_pages(self, category, color_code):
+        """
+        For the given category and color, get the maximum amount of pages available from the pagination wrapper
+        :param category: name of the category
+        :param color_code: code of color as in url
+        :return: number of the last product page for that category and color
+        """
 
         category_color_link = '{}/{}?sort=new&bi_color={}'.format(self.URL_CLOTHES, category, color_code)
 
@@ -126,9 +133,14 @@ class AboutYouScraper():
         return max_page
 
     def download_page(self, category, color, page):
+        """
+        Download and save all product info and images from a given page
+        :param category: category to download
+        :param color: color name to download
+        :param page: number of the page to download
+        """
 
         page_link = '{}/{}?sort=new&bi_color={}&page={}'.format(self.URL_CLOTHES, category, self.colors[color], page)
-        page_df = pd.DataFrame()
 
         # get the products list from the page
         products = self.download_products(page_link)
@@ -157,8 +169,6 @@ class AboutYouScraper():
 
             # sleeep 2 seconds after each product
             time.sleep(2)
-
-        return page_df
 
     def get_product_info(self, product):
         """
@@ -279,7 +289,8 @@ class AboutYouScraper():
 
 
 def main():
-    scraper = AboutYouScraper(data_path='/Users/sonynka/HTW/IC/data/aboutyou_paging')
+    scraper = AboutYouScraper(data_path='/Users/sonynka/HTW/IC/data/aboutyou_paging',
+                              categories=['tops'])
     scraper.download_data()
 
 
