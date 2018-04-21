@@ -6,31 +6,32 @@ import os
 from selenium import webdriver
 
 
-class AboutYouScraper():
+class FashionIdScraper():
     """
     Scrapes the website www.aboutyou.de for images of fashion items with their attributes such as category, color etc.
     Saves the images in the given folder data path and a csv file describing each image's desscription.
     """
 
-    URL = 'https://www.aboutyou.de'
-    URL_CLOTHES = URL + '/frauen/bekleidung'
+    DATA_PATH = './data/'
+
+    URL = 'https://www.fashionid.de'
+    URL_CLOTHES = URL + '/damen'
 
     # list of colors and their codes on the aboutyou website
-    COLORS = {'black': 38932,
-              'white': 38935,
-              'red': 38931,
-              'blue': 38920,
-              'green': 38926,
-              'yellow': 38923,
-              'pink': 38930,
-              'gray': 38925,
-              'beige': 38919
+    COLORS = {'black': 'grau-schwarz',
+              'white': 'weiss',
+              'red': 'rot',
+              'blue': 'blau-turkis',
+              'green': 'grun',
+              'yellow': 'gelb',
+              'pink': 'rose',
+              'beige': 'braun'
               }
 
     # list of clothes categories on the aboutyou website
     # special characters need to be replaced according to the url
-    CATEGORIES = ['kleider', 'strick', 'jeans', 'jacken', 'blusen-und-tuniken',
-                  'roecke', 'shirts', 'hosen', 'jumpsuits-und-overalls', 'tops']
+    CATEGORIES = ['kleider', 'pullover-strick', 'jeans', 'jacken', 'blusen',
+                  'roecke', 'shirts', 'hosen', 'jumpsuits', 'shorts-bermudas']
 
 
     def __init__(self,
@@ -48,16 +49,12 @@ class AboutYouScraper():
         :param img_format: format in which scraped images should be saved
         """
 
-        self.validate_colors(color_names)
-        self.validate_categories(categories)
-
         self.data_path = data_path
-        self.data_csv = os.path.join(self.data_path, 'data.csv')
 
-        self.chromedriver_path = chromedriver_path
+        self.data_csv = os.path.join(self.data_path, 'data.csv')
+        self.categories = categories
 
         self.colors = {color_name: self.COLORS[color_name] for color_name in color_names}
-        self.categories = categories
 
         # dataframe to hold all images information
         self.image_format = img_format
@@ -99,7 +96,7 @@ class AboutYouScraper():
             print('Color {}: {} pages'.format(color, max_page))
             print('-' * 50)
 
-            for page in range(1, max_page+1):
+            for page in range(1, max_page + 1):
                 print('Downloading page: ', page)
 
                 try:
@@ -117,14 +114,15 @@ class AboutYouScraper():
         :return: number of the last product page for that category and color
         """
 
-        category_color_link = '{}/{}?sort=new&bi_color={}'.format(self.URL_CLOTHES, category, color_code)
+        category_color_link = '{url}/{category}/farbe-{color}/?sortby=newness'.format(
+            url=self.URL_CLOTHES, category=category, color=color_code)
 
         response = self.get_response(category_color_link)
         category_soup = BeautifulSoup(response.content, 'html.parser')
 
         try:
-            pagination = category_soup.find('div', class_='paginationWrapper_1wdi4uz')
-            max_page = int(pagination.find_all('li', class_='pageNumbers_ffrt32')[-1].text)
+            pagination = category_soup.find('ul', class_='pagination')
+            max_page = int(pagination.find_all('a', class_='js-togglePage')[-2].text)
         except:
             max_page = 1
 
@@ -138,7 +136,8 @@ class AboutYouScraper():
         :param page: number of the page to download
         """
 
-        page_link = '{}/{}?sort=new&bi_color={}&page={}'.format(self.URL_CLOTHES, category, self.colors[color], page)
+        page_link = '{url}/{category}/farbe-{color}/?sortby=newness&page={page}'.format(
+            url=self.URL_CLOTHES, category=category, color=self.colors[color], page=page)
 
         # get the products list from the page
         products = self.download_products(page_link)
@@ -151,7 +150,7 @@ class AboutYouScraper():
                 # save product image
                 img_path = os.path.join(category, img_id + self.image_format)
                 img_filepath = os.path.join(self.data_path, img_path)
-                self.save_product_image(img_link, img_filepath, img_width=self.image_width)
+                self.save_product_image(img_link, img_filepath, width=self.image_width)
 
                 # save product to dataframe
                 product_dict = {'img_path': img_path,
@@ -180,30 +179,31 @@ class AboutYouScraper():
         product_soup = BeautifulSoup(product_page.content, 'html.parser')
 
         # get product details
-        product_name = product_soup.find('h1', class_='productName_192josg').text
-        product_details = product_soup.find('div', class_='wrapper_1w5lv0w')
+        product_name = product_soup.find('h1').text
+        product_details = product_soup.find('ul', class_='list-column qa-description-bullet-points-list').find_all('li')
         product_attributes = []
-        for detail_section in product_details.find_all('div', class_='container_iv4rb4'):
-            for tag in detail_section.find_all('li'):
-                product_attributes.append(tag.text.strip())
+        for detail in product_details:
+            product_attributes.append(detail.text.strip())
+
 
         # get product image
-        product_img = product.find('div', class_='img_162hfdi-o_O-imgTrimmed_16d3go2')['style']
-        product_img_link = 'https:' + product_img.split('"')[1].split('?')[0]
-        product_img_id = product_img_link.split('/')[-1]
+        product_gallery = product_soup.find('div', class_='product-gallery col-xs-6')
+        product_img_src = product_gallery.find_all('li')[0].img['src']
+        product_img_link = 'https:' + ','.join(product_img_src.split(',')[:-1]) + '.jpg'
+        product_img_id = product_img_src.split('_')[-1].split(',')[0]
 
         return product_name, product_img_id, product_img_link, product_attributes
 
-    def save_product_image(self, img_link, img_filepath, img_width):
+    def save_product_image(self, img_link, img_filepath, width=400):
         """
         Save the given image from the url to the given image file path.
         :param img_link: URL of the image
         :param img_filepath: path where to save the image
-        :param img_width: width size of the image
+        :param width: (optional) width size of the image
         """
 
         if not os.path.exists(img_filepath):
-            img_link = img_link + '?width={}'.format(str(img_width))
+            img_link = img_link.split('.jpg')[0] + ',{}.jpg'.format(width)
             img = self.get_response(img_link)
             if img.status_code == requests.codes.ok:
                 with open(img_filepath, 'wb') as file:
@@ -218,27 +218,11 @@ class AboutYouScraper():
         :return: HTML for all the products on the website
         """
 
-        # start driver to click on Produktansicht button
-        driver = webdriver.Chrome(self.chromedriver_path)
-        driver.get(url)
+        products_page = self.get_response(url)
+        products_soup = BeautifulSoup(products_page.content, 'html.parser')
 
-        products = []
-
-        # for categories that don't have any products for the given filter, chrome opens a shortened url without
-        # the filter, therefore need to check if it is the correct one
-        if driver.current_url == url:
-            driver.find_element_by_class_name('button_6u2hqh').click()
-
-            # download Produktansicht page and close driver
-            subcat_soup = BeautifulSoup(driver.page_source, 'html.parser')
-            driver.close()
-
-            # avoid taking 'Weitere Produkte' section, which are products that don't match the filter
-            color_products = subcat_soup.find('div', class_='wrapper_8yay2a')
-            products = color_products.find_all('div', class_='categoryTileWrapper_e296pg')
-        else:
-            driver.close()
-            print('No products found')
+        products_wrapper = products_soup.find('div', class_='prvWrapper qa-prv-wrapper')
+        products = products_wrapper.find_all('div', class_='product-item qa-product-item')
 
         return products
 
@@ -285,24 +269,10 @@ class AboutYouScraper():
         except ValueError:
             print("Problem downloading response content for: {} Response Code: {}".format(url, response.status_code))
 
-    def validate_colors(self, color_names):
-        if not isinstance(color_names, list):
-            raise ValueError('Color names must be a list')
-
-        if not set(color_names).issubset(set(self.COLORS.keys())):
-            raise ValueError('Invalid color names. Allowed colors are: {}'.format(self.COLORS.keys()))
-
-    def validate_categories(self, categories):
-        if not isinstance(categories, list):
-            raise ValueError('Category names must be a list')
-
-        if not set(categories).issubset(set(self.CATEGORIES)):
-            raise ValueError('Invalid category names. Allowed categories are: {}'.format(self.CATEGORIES))
-
 
 def main():
-    scraper = AboutYouScraper(data_path='/Users/sonynka/HTW/IC/data/aboutyou_paging',
-                              categories=['tops'])
+    scraper = FashionIdScraper(data_path='/Users/sonynka/HTW/IC/data/fashionid',
+                               categories=['pullover-strick', 'jeans', 'jacken'])
     scraper.download_data()
 
 
