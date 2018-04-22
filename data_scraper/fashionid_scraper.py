@@ -12,7 +12,7 @@ class FashionIdScraper(Scraper):
     url_clothes = url + '/damen'
     url_category_color = url_clothes + '/{category}/farbe-{color}/?sortby=newness'
 
-    # list of colors and their codes on the aboutyou website
+    # list of colors and their codes on the website
     COLORS = {'black': 'grau-schwarz',
               'white': 'weiss',
               'red': 'rot',
@@ -23,7 +23,7 @@ class FashionIdScraper(Scraper):
               'beige': 'braun'
               }
 
-    # list of clothes categories on the aboutyou website
+    # list of clothes categories on the website
     # special characters need to be replaced according to the url
     CATEGORIES = ['kleider', 'pullover-strick', 'jeans', 'jacken', 'blusen',
                   'roecke', 'shirts', 'hosen', 'jumpsuits', 'shorts-bermudas']
