@@ -3,7 +3,7 @@ import argparse
 from data_scraper.aboutyou_scraper import AboutYouScraper
 from data_scraper.fashionid_scraper import FashionIdScraper
 
-DATA_PATH = './data/'
+DATA_PATH = './data2/'
 CHROMEDRIVER_PATH = '../chromedriver/chromedriver'
 
 IMAGE_FORMAT = '.jpg'
@@ -16,7 +16,6 @@ def main(config):
         os.makedirs(config.data_path)
 
     options = dict(data_path=config.data_path,
-                   chromedriver_path=config.chromedriver_path,
                    img_format=config.img_format,
                    img_width=config.img_width)
 
@@ -31,6 +30,7 @@ def main(config):
     scraper = None
 
     if config.website == 'aboutyou':
+        options['chromedriver_path'] = config.chromedriver_path
         scraper = AboutYouScraper(**options)
     elif config.website == 'fashionid':
         scraper = FashionIdScraper(**options)
@@ -46,7 +46,8 @@ if __name__ == '__main__':
                         help='which website to scrape')
 
     parser.add_argument('--data_path', type=str, default=DATA_PATH)
-    parser.add_argument('--chromedriver_path', type=str, default=CHROMEDRIVER_PATH)
+    parser.add_argument('--chromedriver_path', type=str, default=CHROMEDRIVER_PATH, required=False,
+                        help='path to chromedriver, neccessary for some scrapers')
     parser.add_argument('--img_format', type=str, default=IMAGE_FORMAT)
     parser.add_argument('--img_width', type=str, default=IMAGE_WIDTH)
 
