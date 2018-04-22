@@ -21,10 +21,12 @@ def main(config):
                    img_width=config.img_width)
 
     if config.color_names:
-        options['color_names'] = config.color_names
+        color_names = [str(item) for item in config.color_names.split(',')]
+        options['color_names'] = color_names
 
     if config.categories:
-        options['categories'] = config.categories
+        categories = [str(item) for item in config.categories.split(',')]
+        options['categories'] = categories
 
     scraper = None
 

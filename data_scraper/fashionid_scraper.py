@@ -49,12 +49,14 @@ class FashionIdScraper():
         :param img_format: format in which scraped images should be saved
         """
 
-        self.data_path = data_path
+        self.validate_colors(color_names)
+        self.validate_categories(categories)
 
+        self.data_path = data_path
         self.data_csv = os.path.join(self.data_path, 'data.csv')
-        self.categories = categories
 
         self.colors = {color_name: self.COLORS[color_name] for color_name in color_names}
+        self.categories = categories
 
         # dataframe to hold all images information
         self.image_format = img_format
@@ -269,18 +271,19 @@ class FashionIdScraper():
         except ValueError:
             print("Problem downloading response content for: {} Response Code: {}".format(url, response.status_code))
 
+    def validate_colors(self, color_names):
+        if not isinstance(color_names, list):
+            raise ValueError('Color names must be a list')
 
-def main():
-    scraper = FashionIdScraper(data_path='/Users/sonynka/HTW/IC/data/fashionid',
-                               categories=['pullover-strick', 'jeans', 'jacken'])
-    scraper.download_data()
+        if not set(color_names).issubset(set(self.COLORS.keys())):
+            raise ValueError('Invalid color names. Allowed colors are: {}'.format(self.COLORS.keys()))
 
+    def validate_categories(self, categories):
+        if not isinstance(categories, list):
+            raise ValueError('Category names must be a list')
 
-if __name__ == '__main__':
-    main()
-
-
-
+        if not set(categories).issubset(set(self.CATEGORIES)):
+            raise ValueError('Invalid category names. Allowed categories are: {}'.format(self.CATEGORIES))
 
 
 

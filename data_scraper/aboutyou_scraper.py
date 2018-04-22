@@ -300,14 +300,6 @@ class AboutYouScraper():
             raise ValueError('Invalid category names. Allowed categories are: {}'.format(self.CATEGORIES))
 
 
-def main():
-    scraper = AboutYouScraper(data_path='/Users/sonynka/HTW/IC/data/aboutyou_paging',
-                              categories=['tops'])
-    scraper.download_data()
-
-
-if __name__ == '__main__':
-    main()
 
 
 
