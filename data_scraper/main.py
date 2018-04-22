@@ -6,7 +6,6 @@ from fashionid_scraper import FashionIdScraper
 DATA_PATH = './data2/'
 CHROMEDRIVER_PATH = '../chromedriver/chromedriver'
 
-IMAGE_FORMAT = '.jpg'
 IMAGE_WIDTH = 400
 
 
@@ -16,7 +15,6 @@ def main(config):
         os.makedirs(config.data_path)
 
     options = dict(data_path=config.data_path,
-                   img_format=config.img_format,
                    img_width=config.img_width)
 
     if config.color_names:
@@ -48,7 +46,6 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, default=DATA_PATH)
     parser.add_argument('--chromedriver_path', type=str, default=CHROMEDRIVER_PATH, required=False,
                         help='path to chromedriver, neccessary for some scrapers')
-    parser.add_argument('--img_format', type=str, default=IMAGE_FORMAT)
     parser.add_argument('--img_width', type=str, default=IMAGE_WIDTH)
 
     # optional parameters, if not specified, the parser will take all the default colors and categories on the website

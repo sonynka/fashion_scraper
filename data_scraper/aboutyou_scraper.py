@@ -33,7 +33,6 @@ class AboutYouScraper(Scraper):
     def __init__(self,
                  data_path,
                  chromedriver_path,
-                 img_format,
                  img_width,
                  color_names=list(COLORS.keys()),
                  categories=CATEGORIES):
@@ -53,7 +52,7 @@ class AboutYouScraper(Scraper):
 
         self.chromedriver_path = chromedriver_path
 
-        super().__init__(data_path, img_format, img_width, colors, categories)
+        super().__init__(data_path, img_width, colors, categories)
 
     def get_number_of_pages(self, category, color_code):
         """

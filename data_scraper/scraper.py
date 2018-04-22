@@ -24,7 +24,6 @@ class Scraper(object, metaclass=ABCMeta):
 
     def __init__(self,
                  data_path,
-                 img_format,
                  img_width,
                  colors,
                  categories):
@@ -32,7 +31,6 @@ class Scraper(object, metaclass=ABCMeta):
         :param data_path: path where to save the scraped data
         :param colors: dictionary with color names and their codes for website filtering
         :param categories: list of categories to scrape
-        :param img_format: format in which scraped images should be saved
         :param img_width: width of the image to be downloaded
         """
 
@@ -42,8 +40,6 @@ class Scraper(object, metaclass=ABCMeta):
         self.colors = colors
         self.categories = categories
 
-        # dataframe to hold all images information
-        self.image_format = img_format
         self.image_width = img_width
 
     def download_data(self):
@@ -118,7 +114,7 @@ class Scraper(object, metaclass=ABCMeta):
                 name, img_id, img_link, details = self.get_product_info(product)
 
                 # save product image
-                img_path = os.path.join(category, img_id + self.image_format)
+                img_path = os.path.join(category, img_id + '.jpg')
                 img_filepath = os.path.join(self.data_path, img_path)
                 self.save_product_image(img_link, img_filepath, img_width=self.image_width)
 

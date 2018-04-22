@@ -19,7 +19,7 @@ The following parameters are available when running the scraper:
 ```
 python data_scraper/main.py [--website {aboutyou,fashionid}] [--data_path DATA_PATH]
                [--chromedriver_path CHROMEDRIVER_PATH]
-               [--img_format IMG_FORMAT] [--img_width IMG_WIDTH]
+               [--img_width IMG_WIDTH]
                [--color_names COLOR_NAMES] [--categories CATEGORIES]
 ```
 

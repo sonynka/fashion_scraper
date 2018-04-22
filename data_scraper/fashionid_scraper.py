@@ -30,7 +30,6 @@ class FashionIdScraper(Scraper):
 
     def __init__(self,
                  data_path,
-                 img_format,
                  img_width,
                  color_names=list(COLORS.keys()),
                  categories=CATEGORIES):
@@ -47,7 +46,7 @@ class FashionIdScraper(Scraper):
         colors = {color_name: self.COLORS[color_name] for color_name in color_names}
         categories = categories
 
-        super().__init__(data_path, img_format, img_width, colors, categories)
+        super().__init__(data_path, img_width, colors, categories)
 
     def get_number_of_pages(self, category, color_code):
         """
