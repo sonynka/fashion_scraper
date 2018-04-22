@@ -8,11 +8,25 @@ color, length, etc.) It downloads data from the following websites:
 
 It saves the product images in a folder structure by category and creates a csv file listing each image path, url, 
 color, category and a list of attributes found on the website for that garment.
+ 
+### data_scraper
+In order to start scraping, run the following command:
+```
+python data_scraper/main.py --website aboutyou --categories kleider,tops --colors black,white
+```
 
+The following parameters are available when running the scraper:
+```
+python data_scraper/main.py [--website {aboutyou,fashionid}] [--data_path DATA_PATH]
+               [--chromedriver_path CHROMEDRIVER_PATH]
+               [--img_format IMG_FORMAT] [--img_width IMG_WIDTH]
+               [--color_names COLOR_NAMES] [--categories CATEGORIES]
+```
+
+### data_processing
 The jupyter notebooks can be used for data cleaning and sanity checks, and also as a template for abstracting 
-relevant attributes into columns and/or one-hot vector format and post-processing of the image data, such as resizing
- and removing alpha channels.
-
+relevant attributes into columns and/or one-hot vector format. There is also a notebook for post-processing of the 
+image data, such as resizing and removing alpha channels.
 
 ## Requirements
 
