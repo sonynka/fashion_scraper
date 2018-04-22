@@ -1,7 +1,7 @@
 import os
 import argparse
-from data_scraper.aboutyou_scraper import AboutYouScraper
-from data_scraper.fashionid_scraper import FashionIdScraper
+from aboutyou_scraper import AboutYouScraper
+from fashionid_scraper import FashionIdScraper
 
 DATA_PATH = './data2/'
 CHROMEDRIVER_PATH = '../chromedriver/chromedriver'

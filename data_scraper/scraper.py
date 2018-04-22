@@ -1,9 +1,7 @@
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import os
-from selenium import webdriver
 from abc import ABCMeta, abstractmethod
 
 
