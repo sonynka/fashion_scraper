@@ -105,3 +105,4 @@ ENV/
 
 
 chromedriver
+data_scraper/data

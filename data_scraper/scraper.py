@@ -3,6 +3,8 @@ import pandas as pd
 import time
 import os
 from abc import ABCMeta, abstractmethod
+from PIL import Image
+import io
 
 
 class Scraper(object, metaclass=ABCMeta):
@@ -20,6 +22,10 @@ class Scraper(object, metaclass=ABCMeta):
 
     @property
     def url_category_color(self):
+        raise NotImplementedError
+
+    @property
+    def url_page_extension(self):
         raise NotImplementedError
 
     def __init__(self,
@@ -55,7 +61,6 @@ class Scraper(object, metaclass=ABCMeta):
                 self.download_category(category)
             except Exception as e:
                 print('Problem with download of category: {}'.format(category), e)
-
 
     def download_category(self, category):
         """
@@ -103,7 +108,7 @@ class Scraper(object, metaclass=ABCMeta):
         """
 
         category_color_link = self.url_category_color.format(category=category, color=self.colors[color])
-        page_link = category_color_link + '&page={}'.format(page)
+        page_link = category_color_link + '&' + self.url_page_extension + '={}'.format(page)
 
         # get the products list from the page
         products = self.download_products(page_link)
@@ -111,22 +116,21 @@ class Scraper(object, metaclass=ABCMeta):
         # get information for each product
         for prod_idx, product in enumerate(products):
             try:
-                name, img_id, img_link, details = self.get_product_info(product)
+                product_info = self.get_product_info(product)
 
                 # save product image
-                img_path = os.path.join(category, img_id + '.jpg')
+                img_path = os.path.join(category, product_info['id'] + '.jpg')
                 img_filepath = os.path.join(self.data_path, img_path)
-                self.save_product_image(img_link, img_filepath, img_width=self.image_width)
+                self.save_product_image(product_info['img_url'], img_filepath, img_width=self.image_width)
+
+                # add additional info to product_info
+                product_info['img_path'] = img_path
+                product_info['category'] = category
+                product_info['color'] = color
 
                 # save product to dataframe
-                product_dict = {'img_path': img_path,
-                                'img_url': img_link,
-                                'category': category,
-                                'color': color,
-                                'product_name': name,
-                                'attributes': ','.join(details)}
+                self.append_csv_file(csv_file=self.data_csv, df=product_info)
 
-                self.append_csv_file(csv_file=self.data_csv, df=product_dict)
             except Exception as e:
                 print('Problem with downloading product: ', e)
 
@@ -151,10 +155,13 @@ class Scraper(object, metaclass=ABCMeta):
         """
 
         if not os.path.exists(img_filepath):
-            img = self.get_response(img_link)
-            if img.status_code == requests.codes.ok:
-                with open(img_filepath, 'wb') as file:
-                    file.write(img.content)
+            img_data = self.get_response(img_link)
+            if img_data.status_code == requests.codes.ok:
+                    img = Image.open(io.BytesIO(img_data.content))
+                    img_ratio = img.size[0] / img.size[1]
+                    new_size = [img_width, int(img_width/img_ratio)]
+                    img = img.resize(new_size, Image.ANTIALIAS)
+                    img.save(img_filepath)
         else:
             print('Image file already exists: ', img_filepath)
 

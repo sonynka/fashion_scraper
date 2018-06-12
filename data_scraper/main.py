@@ -2,8 +2,9 @@ import os
 import argparse
 from aboutyou_scraper import AboutYouScraper
 from fashionid_scraper import FashionIdScraper
+from zalando_scraper import ZalandoScraper
 
-DATA_PATH = './data2/'
+DATA_PATH = './data/'
 CHROMEDRIVER_PATH = '../chromedriver/chromedriver'
 
 IMAGE_WIDTH = 400
@@ -32,6 +33,9 @@ def main(config):
         scraper = AboutYouScraper(**options)
     elif config.website == 'fashionid':
         scraper = FashionIdScraper(**options)
+    elif config.website == 'zalando':
+        options['chromedriver_path'] = config.chromedriver_path
+        scraper = ZalandoScraper(**options)
 
     scraper.download_data()
 
@@ -40,7 +44,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--website', type=str, default='aboutyou', choices=['aboutyou', 'fashionid'],
+    parser.add_argument('--website', type=str, default='aboutyou', choices=['aboutyou', 'fashionid', 'zalando'],
                         help='which website to scrape')
 
     parser.add_argument('--data_path', type=str, default=DATA_PATH)
