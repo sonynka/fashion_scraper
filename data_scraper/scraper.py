@@ -154,14 +154,23 @@ class Scraper(object, metaclass=ABCMeta):
         :param img_width: width size of the image
         """
 
+        def convert_rgba(img):
+            img.load()  # required for png.split()
+            image_jpeg = Image.new("RGB", img.size, (255, 255, 255))
+            image_jpeg.paste(img, mask=img.split()[3])  # 3 is the alpha channel
+            return(image_jpeg)
+
+        def resize_image(img):
+            img_ratio = img.size[0] / img.size[1]
+            new_size = [img_width, int(img_width / img_ratio)]
+            return(img.resize(new_size, Image.ANTIALIAS))
+
         if not os.path.exists(img_filepath):
             img_data = self.get_response(img_link)
             if img_data.status_code == requests.codes.ok:
-                    img = Image.open(io.BytesIO(img_data.content))
-                    img_ratio = img.size[0] / img.size[1]
-                    new_size = [img_width, int(img_width/img_ratio)]
-                    img = img.resize(new_size, Image.ANTIALIAS)
-                    img.save(img_filepath)
+                img = Image.open(io.BytesIO(img_data.content)).convert("RGBA")
+                img = convert_rgba(resize_image(img))
+                img.save(img_filepath)
         else:
             print('Image file already exists: ', img_filepath)
 

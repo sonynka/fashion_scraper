@@ -12,6 +12,7 @@ class AboutYouScraper(Scraper):
     url = 'https://www.aboutyou.de'
     url_clothes = url + '/frauen/bekleidung'
     url_category_color = url_clothes + '/{category}?sort=new&bi_color={color}'
+    url_page_extension = 'page'
 
     # list of colors and their codes on the aboutyou website
     COLORS = {'black': 38932,
@@ -68,8 +69,8 @@ class AboutYouScraper(Scraper):
         category_soup = BeautifulSoup(response.content, 'html.parser')
 
         try:
-            pagination = category_soup.find('div', class_='paginationWrapper_1wdi4uz')
-            max_page = int(pagination.find_all('li', class_='pageNumbers_ffrt32')[-1].text)
+            pagination = category_soup.find('div', class_='styles__paginationWrapper--SrlgQ')
+            max_page = int(pagination.find_all('li', class_='styles__pageNumbers--1Lsj_')[-1].text)
         except:
             max_page = 1
 
@@ -83,26 +84,40 @@ class AboutYouScraper(Scraper):
         """
 
         product_link = self.url + product.a['href']
+        product_brand = product.find('div', class_='styles__brandName--2XS22').text
+        product_name = product.find('div', class_='styles__productName--2z0ZU').text
+
         product_page = self.get_response(product_link)
         product_soup = BeautifulSoup(product_page.content, 'html.parser')
 
         # get product details
-        product_name = product_soup.find('h1', class_='productName_192josg').text
-        product_details = product_soup.find('div', class_='wrapper_1w5lv0w')
+        product_id = product_soup.find('li', class_='styles__articleNumber--1UszN').text.split(':')[-1].strip()
+        product_details = product_soup.find('div', class_='col-sm-6 styles__detailsContainer--1ku-C')
         product_attributes = []
-        for detail_section in product_details.find_all('div', class_='container_iv4rb4'):
+        for detail_section in product_details.find_all('div', class_='styles__accordionContainer--1dPP0'):
             for tag in detail_section.find_all('li'):
                 product_attributes.append(tag.text.strip())
 
-        # get product image
-        product_img = product.find('div', class_='img_162hfdi-o_O-imgTrimmed_16d3go2')['style']
+        # product images
+        product_img_thumbs = product_soup.find('div', class_='styles__images--wD0M5').find('div', class_='slider')
+        product_img_thumbs = product_img_thumbs.find_all('div', class_='styles__img--R5yfd')
 
-        product_img_link = 'https:' + product_img.split('"')[1].split('?')[0]
-        product_img_id = product_img_link.split('/')[-1]
+        img_links = []
+        for img_thumb in product_img_thumbs:
+            img_link = 'https:' + img_thumb['style'].split('(')[1].split('?')[0]
+            img_links.append(img_link)
 
+        # last picture is product without model
+        product_img_link = img_links.pop()
         product_img_link = product_img_link + '?width={}'.format(str(self.image_width))
 
-        return product_name, product_img_id, product_img_link, product_attributes
+        return {'name': product_name,
+                'brand': product_brand,
+                'id': product_id,
+                'img_url': product_img_link,
+                'product_url': product_link,
+                'model_img_urls': ', '.join(img_links),
+                'attributes': ', '.join(product_attributes)}
 
 
     def download_products(self, url):
@@ -121,15 +136,15 @@ class AboutYouScraper(Scraper):
             # for categories that don't have any products for the given filter, chrome opens a shortened url without
             # the filter, therefore need to check if it is the correct one
             if driver.current_url == url:
-                driver.find_element_by_class_name('button_6u2hqh').click()
+                driver.find_element_by_class_name('index__mode--3O-Xm').click()
 
                 # download Produktansicht page and close driver
                 subcat_soup = BeautifulSoup(driver.page_source, 'html.parser')
                 driver.close()
 
                 # avoid taking 'Weitere Produkte' section, which are products that don't match the filter
-                color_products = subcat_soup.find('div', class_='wrapper_8yay2a')
-                products = color_products.find_all('div', class_='categoryTileWrapper_e296pg')
+                color_products = subcat_soup.find('div', class_='styles__container--1bqmB')
+                products = color_products.find_all('div', class_='styles__tile--2s8XN col-sm-6 col-md-4 col-lg-4')
             else:
                 driver.close()
                 print('No products found')
