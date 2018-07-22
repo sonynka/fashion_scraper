@@ -11,6 +11,7 @@ class FashionIdScraper(Scraper):
     url = 'https://www.fashionid.de'
     url_clothes = url + '/damen'
     url_category_color = url_clothes + '/{category}/farbe-{color}/?sortby=newness'
+    url_page_extension = 'page'
 
     # list of colors and their codes on the website
     COLORS = {'black': 'grau-schwarz',
@@ -77,11 +78,14 @@ class FashionIdScraper(Scraper):
         """
 
         product_link = self.url + product.a['href']
+        product_brand = product.find('div', class_='product-item__brand qa-product-tile-brand').text
+        product_name = product.find('h3', class_='product-item__description').find(text=True, recursive=False)
+
         product_page = self.get_response(product_link)
         product_soup = BeautifulSoup(product_page.content, 'html.parser')
 
         # get product details
-        product_name = product_soup.find('h1').text
+        product_id = product_soup.find(itemprop='sku')['content']
         product_details = product_soup.find('ul', class_='list-column qa-description-bullet-points-list').find_all('li')
         product_attributes = []
         for detail in product_details:
@@ -95,9 +99,12 @@ class FashionIdScraper(Scraper):
         product_img_link = 'https:' + ','.join(product_img_src.split(',')[:-1]) + '.jpg'
         product_img_link = product_img_link.split('.jpg')[0] + ',{}.jpg'.format(self.image_width)
 
-        product_img_id = product_img_src.split('_')[-1].split(',')[0]
-
-        return product_name, product_img_id, product_img_link, product_attributes
+        return {'name': product_name,
+                'brand': product_brand,
+                'id': product_id,
+                'img_url': product_img_link,
+                'product_url': product_link,
+                'attributes': ', '.join(product_attributes)}
 
     def download_products(self, url):
         """
