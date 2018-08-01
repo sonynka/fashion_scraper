@@ -9,8 +9,9 @@ import io
 
 class Scraper(object, metaclass=ABCMeta):
     """
-    Scrapes a website for images of fashion items with their attributes such as category, color etc.
-    Saves the images in the given folder data path and a csv file describing each image's desscription.
+    Scrapes a website for images of fashion items with their attributes such
+    as category, color etc. Saves the images in the given folder data path
+    and a csv file describing each image's description.
     """
     @property
     def url(self):
@@ -32,12 +33,14 @@ class Scraper(object, metaclass=ABCMeta):
                  data_path,
                  img_width,
                  colors,
-                 categories):
+                 categories,
+                 download_imgs):
         """
         :param data_path: path where to save the scraped data
-        :param colors: dictionary with color names and their codes for website filtering
+        :param colors: dictionary with colors and their codes for filtering
         :param categories: list of categories to scrape
         :param img_width: width of the image to be downloaded
+        :param download_imgs: download pictures to the machine or just data
         """
 
         self.data_path = data_path
@@ -47,6 +50,7 @@ class Scraper(object, metaclass=ABCMeta):
         self.categories = categories
 
         self.image_width = img_width
+        self.download_images = download_imgs
 
     def download_data(self):
         """
@@ -121,7 +125,10 @@ class Scraper(object, metaclass=ABCMeta):
                 # save product image
                 img_path = os.path.join(category, product_info['id'] + '.jpg')
                 img_filepath = os.path.join(self.data_path, img_path)
-                self.save_product_image(product_info['img_url'], img_filepath, img_width=self.image_width)
+                if self.download_images:
+                    self.save_product_image(product_info['img_url'],
+                                            img_filepath,
+                                            img_width=self.image_width)
 
                 # add additional info to product_info
                 product_info['img_path'] = img_path
@@ -134,8 +141,8 @@ class Scraper(object, metaclass=ABCMeta):
             except Exception as e:
                 print('Problem with downloading product: ', e)
 
-            # sleeep 2 seconds after each product
-            time.sleep(2)
+            # sleeep after each product
+            time.sleep(0.5)
 
     @abstractmethod
     def get_product_info(self, product):

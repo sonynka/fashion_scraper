@@ -16,7 +16,8 @@ def main(config):
         os.makedirs(config.data_path)
 
     options = dict(data_path=config.data_path,
-                   img_width=config.img_width)
+                   img_width=config.img_width,
+                   download_imgs=config.download_imgs)
 
     if config.color_names:
         color_names = [str(item) for item in config.color_names.split(',')]
@@ -58,6 +59,9 @@ if __name__ == '__main__':
     parser.add_argument("--categories", required=False, type=str,
                         help="comma separated list of category names, e.g.: kleider,jumpsuits-und-overalls,tops "
                              "(special characters need to be replaced according to the url)")
+    parser.add_argument('--download', dest='download_imgs', action='store_true')
+    parser.add_argument('--no_download', dest='download_imgs', action='store_false')
+    parser.set_defaults(download_imgs=True)
 
     config = parser.parse_args()
     print(config)

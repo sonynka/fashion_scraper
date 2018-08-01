@@ -35,6 +35,7 @@ class AboutYouScraper(Scraper):
                  data_path,
                  chromedriver_path,
                  img_width,
+                 download_imgs,
                  color_names=list(COLORS.keys()),
                  categories=CATEGORIES):
         """
@@ -53,7 +54,7 @@ class AboutYouScraper(Scraper):
 
         self.chromedriver_path = chromedriver_path
 
-        super().__init__(data_path, img_width, colors, categories)
+        super().__init__(data_path, img_width, colors, categories, download_imgs)
 
     def get_number_of_pages(self, category, color_code):
         """
@@ -99,6 +100,11 @@ class AboutYouScraper(Scraper):
                 product_attributes.append(tag.text.strip())
 
         # product images
+        # main product image
+        product_img_link = product.find('div', class_='styles__img--R5yfd styles__imgTrimmed--1j_b9')['style']
+        product_img_link = 'https:' + product_img_link.split('(')[1].split('?')[0].replace('"', '')
+
+        # model images
         product_img_thumbs = product_soup.find('div', class_='styles__images--wD0M5').find('div', class_='slider')
         product_img_thumbs = product_img_thumbs.find_all('div', class_='styles__img--R5yfd')
 
@@ -106,10 +112,7 @@ class AboutYouScraper(Scraper):
         for img_thumb in product_img_thumbs:
             img_link = 'https:' + img_thumb['style'].split('(')[1].split('?')[0]
             img_links.append(img_link)
-
-        # last picture is product without model
-        product_img_link = img_links.pop()
-        product_img_link = product_img_link + '?width={}'.format(str(self.image_width))
+        img_links.remove(product_img_link)
 
         return {'name': product_name,
                 'brand': product_brand,
@@ -133,10 +136,18 @@ class AboutYouScraper(Scraper):
 
         try:
             driver.get(url)
-            # for categories that don't have any products for the given filter, chrome opens a shortened url without
-            # the filter, therefore need to check if it is the correct one
+            # for categories that don't have any products for the given filter,
+            # chrome opens a shortened url without the filter, therefore need
+            #   to check if it is the correct one
             if driver.current_url == url:
-                driver.find_element_by_class_name('index__mode--3O-Xm').click()
+                try:
+                    product_view = \
+                    '//*[@id="app"]/section/div[2]/div/div[2]/div/div/div[1]/div[2]/div/div[2]/div[1]/div/span[2]'
+                    driver.find_element_by_xpath(product_view).click()
+                except:
+                    product_view = \
+                    '//*[@id="app"]/section/div[1]/div/div[2]/div/div/div[1]/div[2]/div/div[2]/div[1]/div/span[2]'
+                    driver.find_element_by_xpath(product_view).click()
 
                 # download Produktansicht page and close driver
                 subcat_soup = BeautifulSoup(driver.page_source, 'html.parser')
