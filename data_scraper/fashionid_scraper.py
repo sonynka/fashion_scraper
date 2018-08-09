@@ -32,6 +32,7 @@ class FashionIdScraper(Scraper):
     def __init__(self,
                  data_path,
                  img_width,
+                 download_imgs,
                  color_names=list(COLORS.keys()),
                  categories=CATEGORIES):
         """
@@ -47,7 +48,7 @@ class FashionIdScraper(Scraper):
         colors = {color_name: self.COLORS[color_name] for color_name in color_names}
         categories = categories
 
-        super().__init__(data_path, img_width, colors, categories)
+        super().__init__(data_path, img_width, colors, categories, download_imgs)
 
     def get_number_of_pages(self, category, color_code):
         """
@@ -79,7 +80,7 @@ class FashionIdScraper(Scraper):
 
         product_link = self.url + product.a['href']
         product_brand = product.find('div', class_='product-item__brand qa-product-tile-brand').text
-        product_name = product.find('h3', class_='product-item__description').find(text=True, recursive=False)
+        product_name = product.find('h3', class_='product-item__description').find(text=True, recursive=False).strip()
 
         product_page = self.get_response(product_link)
         product_soup = BeautifulSoup(product_page.content, 'html.parser')
@@ -91,19 +92,23 @@ class FashionIdScraper(Scraper):
         for detail in product_details:
             product_attributes.append(detail.text.strip())
 
+        # get product images
+        product_gallery = product_soup.find('ul', class_='gallery-thumbs')
+        img_links = []
+        for img_thumb in product_gallery.find_all('li'):
+            img_src = img_thumb.find('img')['data-src']
+            img_link = 'https:' + ','.join(img_src.split(',')[:-1])+ '.jpg'
+            img_link = img_link.split('.jpg')[0] + ',{}.jpg'.format(self.image_width)
+            img_links.append(img_link)
 
-        # get product image
-        product_gallery = product_soup.find('div', class_='product-gallery col-xs-6')
-        product_img_src = product_gallery.find_all('li')[0].img['src']
-
-        product_img_link = 'https:' + ','.join(product_img_src.split(',')[:-1]) + '.jpg'
-        product_img_link = product_img_link.split('.jpg')[0] + ',{}.jpg'.format(self.image_width)
+        product_img_link = img_links.pop(0)
 
         return {'name': product_name,
                 'brand': product_brand,
                 'id': product_id,
                 'img_url': product_img_link,
                 'product_url': product_link,
+                'model_img_urls': ', '.join(img_links),
                 'attributes': ', '.join(product_attributes)}
 
     def download_products(self, url):
