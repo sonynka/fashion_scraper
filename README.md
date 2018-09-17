@@ -5,6 +5,7 @@ color, length, etc.) It downloads data from the following websites:
 
 - www.aboutyou.de
 - www.fashionid.de
+- www.zalando.de
 
 It saves the product images in a folder structure by category and creates a csv file listing each image path, url, 
 color, category and a list of attributes found on the website for that garment.
