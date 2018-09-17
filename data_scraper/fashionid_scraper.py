@@ -10,7 +10,8 @@ class FashionIdScraper(Scraper):
 
     url = 'https://www.fashionid.de'
     url_clothes = url + '/damen'
-    url_category_color = url_clothes + '/{category}/farbe-{color}/?sortby=newness'
+    url_sorting = 'sortby=newness'
+    url_category_color = url_clothes + '/{category}/farbe-{color}/?' + url_sorting
     url_page_extension = 'page'
 
     # list of colors and their codes on the website
@@ -50,17 +51,14 @@ class FashionIdScraper(Scraper):
 
         super().__init__(data_path, img_width, colors, categories, download_imgs)
 
-    def get_number_of_pages(self, category, color_code):
+    def get_number_of_pages(self, url):
         """
         For the given category and color, get the maximum amount of pages available from the pagination wrapper
-        :param category: name of the category
-        :param color_code: code of color as in url
+        :param url: url to download the pages for
         :return: number of the last product page for that category and color
         """
 
-        category_color_link = self.url_category_color.format(category=category, color=color_code)
-
-        response = self.get_response(category_color_link)
+        response = self.get_response(url)
         category_soup = BeautifulSoup(response.content, 'html.parser')
 
         try:

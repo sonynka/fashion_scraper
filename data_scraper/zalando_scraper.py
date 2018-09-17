@@ -6,7 +6,8 @@ class ZalandoScraper(Scraper):
 
     url = 'https://www.zalando.de'
     url_clothes = url + '/damenbekleidung'
-    url_category_color = url_clothes + '-{category}/_{color}/?order=activation_date'
+    url_sorting = 'order=activation_date'
+    url_category_color = url_clothes + '-{category}/_{color}/?' + url_sorting
     url_page_extension = 'p'
 
     # list of colors and their codes on the aboutyou website
@@ -30,6 +31,7 @@ class ZalandoScraper(Scraper):
                  data_path,
                  chromedriver_path,
                  img_width,
+                 download_imgs,
                  color_names=list(COLORS.keys()),
                  categories=CATEGORIES):
         """
@@ -50,19 +52,16 @@ class ZalandoScraper(Scraper):
         # options.add_argument('headless')
         self.driver = webdriver.Chrome(chromedriver_path, chrome_options=options)
 
-        super().__init__(data_path, img_width, colors, categories)
+        super().__init__(data_path, img_width, colors, categories, download_imgs)
 
-    def get_number_of_pages(self, category, color_code):
+    def get_number_of_pages(self, url):
         """
         For the given category and color, get the maximum amount of pages available from the pagination wrapper
-        :param category: name of the category
-        :param color_code: code of color as in url
+        :param url: url to download the pages for
         :return: number of the last product page for that category and color
         """
 
-        category_color_link = self.url_category_color.format(category=category, color=color_code)
-
-        response = self.get_response(category_color_link)
+        response = self.get_response(url)
         category_soup = BeautifulSoup(response.content, 'html.parser')
 
         try:

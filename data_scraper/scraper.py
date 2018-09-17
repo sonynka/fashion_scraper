@@ -29,6 +29,10 @@ class Scraper(object, metaclass=ABCMeta):
     def url_page_extension(self):
         raise NotImplementedError
 
+    @property
+    def url_sorting(self):
+        raise NotImplementedError
+
     def __init__(self,
                  data_path,
                  img_width,
@@ -81,7 +85,9 @@ class Scraper(object, metaclass=ABCMeta):
 
         for color in self.colors:
 
-            max_page = self.get_number_of_pages(category, self.colors[color])
+            category_color_link = self.url_category_color.format(
+                category, self.colors[color])
+            max_page = self.get_number_of_pages(category_color_link)
             print('Color {}: {} pages'.format(color, max_page))
             print('-' * 50)
 
